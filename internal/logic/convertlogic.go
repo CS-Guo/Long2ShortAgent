@@ -95,7 +95,7 @@ func (l *ConvertLogic) Convert(req *types.ConvertRequest) (resp *types.ConvertRe
 	}
 	_, err = l.svcCtx.ShortUrlModel.Insert(l.ctx, &shortMapLong)
 	if err != nil {
-		logx.Errorf("l.svcCtx.ShortUrlModel.Insert failed", logx.LogField{"err", err})
+		logx.Errorw("l.svcCtx.ShortUrlModel.Insert failed", logx.LogField{Key: "err", Value: err})
 		return nil, err
 	}
 	// 5. 返回响应
