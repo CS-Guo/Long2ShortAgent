@@ -55,7 +55,7 @@ func (l *ConvertLogic) Convert(req *types.ConvertRequest) (resp *types.ConvertRe
 		}
 		logx.Errorw("l.svcCtx.ShortUrlModel.FindOneByMd5 Failed", logx.LogField{Key: "err", Value: err})
 
-		return &types.ConvertResponse{fmt.Sprintf("该链接已经被转过了：%v", l.svcCtx.ShortDomain+u.Surl.String)}, err
+		return &types.ConvertResponse{ShortUrl: fmt.Sprintf("该链接已经被转过了：%v", l.svcCtx.ShortDomain+u.Surl.String)}, err
 	}
 	// 1.4 输入的是完整的url , 避免循环转链接
 	baseUrl, err := url_tool.BasePath(longUrl)
