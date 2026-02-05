@@ -1,0 +1,20 @@
+Name: shortener-api
+Host: 0.0.0.0
+Port: 8888
+
+ShortUrlDB:
+  DSN: app:123456@tcp(127.0.0.1:3306)/shortlink?charset=utf8mb4&parseTime=True&loc=Asia%2FShanghai
+
+Sequence:
+  DSN: app:app123@tcp(127.0.0.1:3306)/shortlink?charset=utf8mb4&parseTime=True&loc=Asia%2FShanghai
+
+BaseStr: 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
+
+ShortUrlBlackList: ["fuck","bitch","api"]
+
+ShortDomain: sfguo.cn/
+
+Redis:
+  Host: 127.0.0.1:6479
+  Type: node
+  Password: ""
