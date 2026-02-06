@@ -4,12 +4,14 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
-	"github.com/zeromicro/go-zero/rest/httpx"
 	"goZero/internal/logic"
 	"goZero/internal/svc"
 	"goZero/internal/types"
+
+	"github.com/zeromicro/go-zero/rest/httpx"
 )
 
 func ShowHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
@@ -24,8 +26,12 @@ func ShowHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		resp, err := l.Show(&req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
-		} else {
-			httpx.OkJsonCtx(r.Context(), w, resp)
 		}
+
+		fmt.Println()
+		fmt.Println(resp.LongUrl)
+		fmt.Println()
+
+		http.Redirect(w, r, resp.LongUrl, http.StatusFound) // 进行重定向
 	}
 }

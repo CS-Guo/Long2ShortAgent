@@ -3,10 +3,15 @@
 
 package config
 
-import "github.com/zeromicro/go-zero/rest"
+import (
+	"github.com/zeromicro/go-zero/core/stores/cache"
+	"github.com/zeromicro/go-zero/rest"
+)
 
 type Config struct {
 	rest.RestConf
+
+	RedisCache cache.CacheConf // 缓存配置
 
 	ShortUrlDB struct {
 		DSN string
@@ -23,8 +28,8 @@ type Config struct {
 	ShortDomain string
 
 	Redis struct {
-		Host     string
-		Type     string
-		Password string
+		Host string
+		Type string
+		Pass string
 	}
 }

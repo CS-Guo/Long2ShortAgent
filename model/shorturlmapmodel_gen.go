@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/zeromicro/go-zero/core/stores/builder"
+	"github.com/zeromicro/go-zero/core/stores/cache"
+	"github.com/zeromicro/go-zero/core/stores/sqlc"
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
 	"github.com/zeromicro/go-zero/core/stringx"
 )
@@ -21,6 +23,10 @@ var (
 	shortUrlMapRows                = strings.Join(shortUrlMapFieldNames, ",")
 	shortUrlMapRowsExpectAutoSet   = strings.Join(stringx.Remove(shortUrlMapFieldNames, "`id`", "`create_at`", "`create_time`", "`created_at`", "`update_at`", "`update_time`", "`updated_at`"), ",")
 	shortUrlMapRowsWithPlaceHolder = strings.Join(stringx.Remove(shortUrlMapFieldNames, "`id`", "`create_at`", "`create_time`", "`created_at`", "`update_at`", "`update_time`", "`updated_at`"), "=?,") + "=?"
+
+	cacheShortlinkShortUrlMapIdPrefix   = "cache:shortlink:shortUrlMap:id:"
+	cacheShortlinkShortUrlMapMd5Prefix  = "cache:shortlink:shortUrlMap:md5:"
+	cacheShortlinkShortUrlMapSurlPrefix = "cache:shortlink:shortUrlMap:surl:"
 )
 
 type (
@@ -34,7 +40,7 @@ type (
 	}
 
 	defaultShortUrlMapModel struct {
-		conn  sqlx.SqlConn
+		sqlc.CachedConn
 		table string
 	}
 
@@ -49,27 +55,40 @@ type (
 	}
 )
 
-func newShortUrlMapModel(conn sqlx.SqlConn) *defaultShortUrlMapModel {
+func newShortUrlMapModel(conn sqlx.SqlConn, c cache.CacheConf, opts ...cache.Option) *defaultShortUrlMapModel {
 	return &defaultShortUrlMapModel{
-		conn:  conn,
-		table: "`short_url_map`",
+		CachedConn: sqlc.NewConn(conn, c, opts...),
+		table:      "`short_url_map`",
 	}
 }
 
 func (m *defaultShortUrlMapModel) Delete(ctx context.Context, id uint64) error {
-	query := fmt.Sprintf("delete from %s where `id` = ?", m.table)
-	_, err := m.conn.ExecCtx(ctx, query, id)
+	data, err := m.FindOne(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	shortlinkShortUrlMapIdKey := fmt.Sprintf("%s%v", cacheShortlinkShortUrlMapIdPrefix, id)
+	shortlinkShortUrlMapMd5Key := fmt.Sprintf("%s%v", cacheShortlinkShortUrlMapMd5Prefix, data.Md5)
+	shortlinkShortUrlMapSurlKey := fmt.Sprintf("%s%v", cacheShortlinkShortUrlMapSurlPrefix, data.Surl)
+	_, err = m.ExecCtx(ctx, func(ctx context.Context, conn sqlx.SqlConn) (result sql.Result, err error) {
+		query := fmt.Sprintf("delete from %s where `id` = ?", m.table)
+		return conn.ExecCtx(ctx, query, id)
+	}, shortlinkShortUrlMapIdKey, shortlinkShortUrlMapMd5Key, shortlinkShortUrlMapSurlKey)
 	return err
 }
 
 func (m *defaultShortUrlMapModel) FindOne(ctx context.Context, id uint64) (*ShortUrlMap, error) {
-	query := fmt.Sprintf("select %s from %s where `id` = ? limit 1", shortUrlMapRows, m.table)
+	shortlinkShortUrlMapIdKey := fmt.Sprintf("%s%v", cacheShortlinkShortUrlMapIdPrefix, id)
 	var resp ShortUrlMap
-	err := m.conn.QueryRowCtx(ctx, &resp, query, id)
+	err := m.QueryRowCtx(ctx, &resp, shortlinkShortUrlMapIdKey, func(ctx context.Context, conn sqlx.SqlConn, v any) error {
+		query := fmt.Sprintf("select %s from %s where `id` = ? limit 1", shortUrlMapRows, m.table)
+		return conn.QueryRowCtx(ctx, v, query, id)
+	})
 	switch err {
 	case nil:
 		return &resp, nil
-	case sqlx.ErrNotFound:
+	case sqlc.ErrNotFound:
 		return nil, ErrNotFound
 	default:
 		return nil, err
@@ -77,13 +96,19 @@ func (m *defaultShortUrlMapModel) FindOne(ctx context.Context, id uint64) (*Shor
 }
 
 func (m *defaultShortUrlMapModel) FindOneByMd5(ctx context.Context, md5 sql.NullString) (*ShortUrlMap, error) {
+	shortlinkShortUrlMapMd5Key := fmt.Sprintf("%s%v", cacheShortlinkShortUrlMapMd5Prefix, md5)
 	var resp ShortUrlMap
-	query := fmt.Sprintf("select %s from %s where `md5` = ? limit 1", shortUrlMapRows, m.table)
-	err := m.conn.QueryRowCtx(ctx, &resp, query, md5)
+	err := m.QueryRowIndexCtx(ctx, &resp, shortlinkShortUrlMapMd5Key, m.formatPrimary, func(ctx context.Context, conn sqlx.SqlConn, v any) (i any, e error) {
+		query := fmt.Sprintf("select %s from %s where `md5` = ? limit 1", shortUrlMapRows, m.table)
+		if err := conn.QueryRowCtx(ctx, &resp, query, md5); err != nil {
+			return nil, err
+		}
+		return resp.Id, nil
+	}, m.queryPrimary)
 	switch err {
 	case nil:
 		return &resp, nil
-	case sqlx.ErrNotFound:
+	case sqlc.ErrNotFound:
 		return nil, ErrNotFound
 	default:
 		return nil, err
@@ -91,13 +116,19 @@ func (m *defaultShortUrlMapModel) FindOneByMd5(ctx context.Context, md5 sql.Null
 }
 
 func (m *defaultShortUrlMapModel) FindOneBySurl(ctx context.Context, surl sql.NullString) (*ShortUrlMap, error) {
+	shortlinkShortUrlMapSurlKey := fmt.Sprintf("%s%v", cacheShortlinkShortUrlMapSurlPrefix, surl)
 	var resp ShortUrlMap
-	query := fmt.Sprintf("select %s from %s where `surl` = ? limit 1", shortUrlMapRows, m.table)
-	err := m.conn.QueryRowCtx(ctx, &resp, query, surl)
+	err := m.QueryRowIndexCtx(ctx, &resp, shortlinkShortUrlMapSurlKey, m.formatPrimary, func(ctx context.Context, conn sqlx.SqlConn, v any) (i any, e error) {
+		query := fmt.Sprintf("select %s from %s where `surl` = ? limit 1", shortUrlMapRows, m.table)
+		if err := conn.QueryRowCtx(ctx, &resp, query, surl); err != nil {
+			return nil, err
+		}
+		return resp.Id, nil
+	}, m.queryPrimary)
 	switch err {
 	case nil:
 		return &resp, nil
-	case sqlx.ErrNotFound:
+	case sqlc.ErrNotFound:
 		return nil, ErrNotFound
 	default:
 		return nil, err
@@ -105,15 +136,39 @@ func (m *defaultShortUrlMapModel) FindOneBySurl(ctx context.Context, surl sql.Nu
 }
 
 func (m *defaultShortUrlMapModel) Insert(ctx context.Context, data *ShortUrlMap) (sql.Result, error) {
-	query := fmt.Sprintf("insert into %s (%s) values (?, ?, ?, ?, ?)", m.table, shortUrlMapRowsExpectAutoSet)
-	ret, err := m.conn.ExecCtx(ctx, query, data.CreateBy, data.IsDel, data.Lurl, data.Md5, data.Surl)
+	shortlinkShortUrlMapIdKey := fmt.Sprintf("%s%v", cacheShortlinkShortUrlMapIdPrefix, data.Id)
+	shortlinkShortUrlMapMd5Key := fmt.Sprintf("%s%v", cacheShortlinkShortUrlMapMd5Prefix, data.Md5)
+	shortlinkShortUrlMapSurlKey := fmt.Sprintf("%s%v", cacheShortlinkShortUrlMapSurlPrefix, data.Surl)
+	ret, err := m.ExecCtx(ctx, func(ctx context.Context, conn sqlx.SqlConn) (result sql.Result, err error) {
+		query := fmt.Sprintf("insert into %s (%s) values (?, ?, ?, ?, ?)", m.table, shortUrlMapRowsExpectAutoSet)
+		return conn.ExecCtx(ctx, query, data.CreateBy, data.IsDel, data.Lurl, data.Md5, data.Surl)
+	}, shortlinkShortUrlMapIdKey, shortlinkShortUrlMapMd5Key, shortlinkShortUrlMapSurlKey)
 	return ret, err
 }
 
 func (m *defaultShortUrlMapModel) Update(ctx context.Context, newData *ShortUrlMap) error {
-	query := fmt.Sprintf("update %s set %s where `id` = ?", m.table, shortUrlMapRowsWithPlaceHolder)
-	_, err := m.conn.ExecCtx(ctx, query, newData.CreateBy, newData.IsDel, newData.Lurl, newData.Md5, newData.Surl, newData.Id)
+	data, err := m.FindOne(ctx, newData.Id)
+	if err != nil {
+		return err
+	}
+
+	shortlinkShortUrlMapIdKey := fmt.Sprintf("%s%v", cacheShortlinkShortUrlMapIdPrefix, data.Id)
+	shortlinkShortUrlMapMd5Key := fmt.Sprintf("%s%v", cacheShortlinkShortUrlMapMd5Prefix, data.Md5)
+	shortlinkShortUrlMapSurlKey := fmt.Sprintf("%s%v", cacheShortlinkShortUrlMapSurlPrefix, data.Surl)
+	_, err = m.ExecCtx(ctx, func(ctx context.Context, conn sqlx.SqlConn) (result sql.Result, err error) {
+		query := fmt.Sprintf("update %s set %s where `id` = ?", m.table, shortUrlMapRowsWithPlaceHolder)
+		return conn.ExecCtx(ctx, query, newData.CreateBy, newData.IsDel, newData.Lurl, newData.Md5, newData.Surl, newData.Id)
+	}, shortlinkShortUrlMapIdKey, shortlinkShortUrlMapMd5Key, shortlinkShortUrlMapSurlKey)
 	return err
+}
+
+func (m *defaultShortUrlMapModel) formatPrimary(primary any) string {
+	return fmt.Sprintf("%s%v", cacheShortlinkShortUrlMapIdPrefix, primary)
+}
+
+func (m *defaultShortUrlMapModel) queryPrimary(ctx context.Context, conn sqlx.SqlConn, v, primary any) error {
+	query := fmt.Sprintf("select %s from %s where `id` = ? limit 1", shortUrlMapRows, m.table)
+	return conn.QueryRowCtx(ctx, v, query, primary)
 }
 
 func (m *defaultShortUrlMapModel) tableName() string {

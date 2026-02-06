@@ -15,7 +15,7 @@ import (
 type ServiceContext struct {
 	Config        config.Config
 	ShortUrlModel model.ShortUrlMapModel
-	Sequence      sequence.Sequence
+	Sequence      sequence.Sequence // 序列生成器
 
 	ShotUrlBlackList map[string]bool
 	ShortDomain      string
@@ -30,15 +30,20 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	for _, v := range c.ShortUrlBlackList {
 		m[v] = true
 	}
+
+	// 初始化缓存连接
+	redisConf := redis.RedisConf{
+		Host: c.Redis.Host,
+		Type: c.Redis.Type,
+		Pass: c.Redis.Pass,
+	}
+
 	return &ServiceContext{
 		Config:        c,
-		ShortUrlModel: model.NewShortUrlMapModel(conn),
+		ShortUrlModel: model.NewShortUrlMapModel(conn, c.RedisCache),
 		//Sequence:      sequence.NewMysql(c.Sequence.DSN),
-		Sequence: sequence.NewRedis(redis.RedisConf{
-			Host: c.Redis.Host,
-			Type: c.Redis.Type,
-			Pass: c.Redis.Password,
-		}),
+		Sequence: sequence.NewRedis(redisConf), // 发号器
+		//Cache:            redis.MustNewRedis(redisConf), // 缓存层
 		ShotUrlBlackList: m,
 		ShortDomain:      c.ShortDomain,
 	}

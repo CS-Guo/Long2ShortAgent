@@ -48,7 +48,6 @@ func (l *ConvertLogic) Convert(req *types.ConvertRequest) (resp *types.ConvertRe
 	longUrl := md5.Sum([]byte(req.LongUrl))
 	// 查数据库
 	u, err := l.svcCtx.ShortUrlModel.FindOneByMd5(l.ctx, sql.NullString{String: longUrl, Valid: true})
-	fmt.Println("u:", u.Surl)
 	if !errors.Is(err, sqlx.ErrNotFound) {
 		if err != nil {
 			return nil, fmt.Errorf("该链已经被转过: %v", u.Surl.String)

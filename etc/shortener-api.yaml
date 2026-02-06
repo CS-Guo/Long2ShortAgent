@@ -14,7 +14,11 @@ ShortUrlBlackList: ["fuck","bitch","api"]
 
 ShortDomain: sfguo.cn/
 
+RedisCache:
+  - Host: 127.0.0.1:6479
+
+
 Redis:
   Host: 127.0.0.1:6479
   Type: node
-  Password: ""
+  Pass: ""
