@@ -17,8 +17,8 @@ func (r *Redis) Next() (uint64, error) {
 	return uint64(seq), nil
 }
 
-func NewRedis(conf redis.RedisConf) Sequence {
+func NewRedis(r *redis.Redis) Sequence {
 	return &Redis{
-		conn: redis.MustNewRedis(conf),
+		conn: r,
 	}
 }

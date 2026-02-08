@@ -8,17 +8,20 @@ import (
 	"goZero/model"
 	"goZero/sequence"
 
+	"github.com/zeromicro/go-zero/core/bloom"
 	"github.com/zeromicro/go-zero/core/stores/redis"
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
 )
 
 type ServiceContext struct {
-	Config        config.Config
-	ShortUrlModel model.ShortUrlMapModel
-	Sequence      sequence.Sequence // 序列生成器
-
+	Config           config.Config
+	ShortUrlModel    model.ShortUrlMapModel
+	Sequence         sequence.Sequence // 序列生成器
 	ShotUrlBlackList map[string]bool
 	ShortDomain      string
+
+	// 布隆过滤器
+	Filter *bloom.Filter
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -38,14 +41,22 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		Pass: c.Redis.Pass,
 	}
 
+	store, err := redis.NewRedis(redisConf)
+
+	if err != nil {
+		panic("redis.NewRedis fail:" + err.Error())
+	}
+
 	return &ServiceContext{
 		Config:        c,
 		ShortUrlModel: model.NewShortUrlMapModel(conn, c.RedisCache),
 		//Sequence:      sequence.NewMysql(c.Sequence.DSN),
-		Sequence: sequence.NewRedis(redisConf), // 发号器
+		Sequence: sequence.NewRedis(store), // 发号器
 		//Cache:            redis.MustNewRedis(redisConf), // 缓存层
 		ShotUrlBlackList: m,
 		ShortDomain:      c.ShortDomain,
+
+		Filter: bloom.New(store, "bloom", 62),
 	}
 
 }

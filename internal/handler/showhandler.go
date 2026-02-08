@@ -4,7 +4,6 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 
 	"goZero/internal/logic"
@@ -28,9 +27,10 @@ func ShowHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 			httpx.ErrorCtx(r.Context(), w, err)
 		}
 
-		fmt.Println()
-		fmt.Println(resp.LongUrl)
-		fmt.Println()
+		if resp == nil {
+			http.NotFound(w, r)
+			return
+		}
 
 		http.Redirect(w, r, resp.LongUrl, http.StatusFound) // 进行重定向
 	}

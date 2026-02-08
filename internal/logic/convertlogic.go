@@ -99,6 +99,13 @@ func (l *ConvertLogic) Convert(req *types.ConvertRequest) (resp *types.ConvertRe
 	}
 	// 5. 返回响应
 	ShortUrl := l.svcCtx.ShortDomain + short
-	fmt.Println(ShortUrl)
+
+	// 转为短链后，加入布隆过滤器中
+	err = l.svcCtx.Filter.Add([]byte(short))
+	if err != nil {
+		logx.Errorw("l.svcCtx.Filter.Ad failed", logx.LogField{Key: "err", Value: err})
+		return nil, err
+	}
+
 	return &types.ConvertResponse{ShortUrl: ShortUrl}, nil
 }
