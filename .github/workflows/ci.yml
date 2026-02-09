@@ -34,4 +34,4 @@ jobs:
       #   run: go test ./...
 
       - name: Build
-        run: go build -o bin/shortener ./shortener.go
+        run: go build -o bin/shortener ./Shortener/shortener.go
