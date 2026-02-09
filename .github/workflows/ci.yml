@@ -22,17 +22,114 @@ jobs:
           path: |
             ~/go/pkg/mod
             ~/.cache/go-build
-          key: ${{ runner.os }}-go-${{ hashFiles('Shortener/go.sum') }}
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
 
       - name: Download deps
+        working-directory: Shortener
         run: go mod download
 
+
+
       # - name: Vet
-      #   run: go vet ./... 
+      #   run: go vet ./...
 
       # - name: Test
       #   run: go test ./...
 
       - name: Build
-        run: go build -o bin/shortener ./shortener.go
         working-directory: Shortener
+        run: go build -o bin/shortener ./shortener.go
+
+#name: CI
+#
+#on:
+#  push:
+#    branches: [ "main" ]
+#  pull_request:
+#
+#jobs:
+#  build:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v4
+#
+#      - name: Debug environment
+#        run: |
+#          echo "=== 环境信息 ==="
+#          echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
+#          echo "当前目录: $(pwd)"
+#          echo ""
+#          echo "=== 仓库内容 ==="
+#          ls -la
+#          echo ""
+#          echo "=== Shortener 目录内容 ==="
+#          if [ -d "Shortener" ]; then
+#            ls -la Shortener/
+#            echo ""
+#            echo "=== go.mod 文件 ==="
+#            if [ -f "Shortener/go.mod" ]; then
+#              cat Shortener/go.mod
+#            else
+#              echo "go.mod 不存在!"
+#            fi
+#          else
+#            echo "Shortener 目录不存在!"
+#          fi
+#
+#      - name: Set up Go
+#        uses: actions/setup-go@v5
+#        with:
+#          go-version: "1.25"
+#
+#      - name: Cache Go modules
+#        uses: actions/cache@v4
+#        with:
+#          path: |
+#            ~/go/pkg/mod
+#            ~/.cache/go-build
+#          key: ${{ runner.os }}-go-${{ hashFiles('Shortener/go.sum') }}
+#
+#      - name: Test working-directory
+#        working-directory: ./Shortener
+#        run: |
+#          echo "测试 working-directory 是否生效"
+#          echo "当前目录: $(pwd)"
+#          echo "目录内容:"
+#          ls -la
+#          echo ""
+#          echo "go.mod 是否存在:"
+#          if [ -f "go.mod" ]; then
+#            echo "✅ 找到 go.mod"
+#            cat go.mod | head -3
+#          else
+#            echo "❌ 未找到 go.mod"
+#          fi
+#
+#      - name: Download deps
+#        run: |
+#          echo "方法1: 使用 cd"
+#          cd Shortener
+#          echo "目录: $(pwd)"
+#          echo "执行 go mod download..."
+#          go mod download || echo "方法1失败"
+#
+#          echo ""
+#          echo "方法2: 使用绝对路径"
+#          cd "$GITHUB_WORKSPACE/Shortener"
+#          echo "目录: $(pwd)"
+#          go mod download || echo "方法2失败"
+#
+#      - name: Build
+#        run: |
+#          cd Shortener
+#          echo "构建目录: $(pwd)"
+#          mkdir -p bin
+#          go build -o bin/shortener .
+#
+#          if [ -f "bin/shortener" ]; then
+#            echo "✅ 构建成功"
+#            ls -lh bin/shortener
+#          else
+#            echo "❌ 构建失败"
+#            exit 1
+#          fi
