@@ -1,0 +1,22 @@
+syntax = "v1"
+
+type (
+	AgentRequest {
+		UserId  string `json:"userId"`
+		Message string `json:"message"`
+	}
+	AgentResponse {
+		Intent string `json:"intent"`
+		Reply  string `json:"reply"`
+		Data   string `json:"data,optional"`
+	}
+)
+
+@server (
+	prefix: /agent
+)
+service agent-api {
+	@handler Chat
+	post /chat (AgentRequest) returns (AgentResponse)
+}
+
