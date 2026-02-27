@@ -7,7 +7,7 @@ Mode: dev
 
 LLM:
   BaseURL: https://www.dmxapi.cn/v1
-  APIKey: "sk-BdFxZ0abG1APGay9jk6QUf47xARiNQrqDhgTG6y2bAS2ruaz"
+  APIKey: "sk-"
   Model: Qwen3-8B
   TimeoutMs: 8000
 
