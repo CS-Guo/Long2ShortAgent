@@ -32,4 +32,12 @@ type Config struct {
 		Type string
 		Pass string
 	}
+
+	Internal struct {
+		ServiceToken string
+	}
+
+	Event struct {
+		ClickStream string
+	}
 }

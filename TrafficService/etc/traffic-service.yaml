@@ -1,0 +1,21 @@
+Name: traffic-service
+Host: 0.0.0.0
+Port: 8891
+
+Mode: dev
+
+ShortUrlDB:
+  DSN: app:123456@tcp(127.0.0.1:3306)/shortlink?charset=utf8mb4&parseTime=True&loc=Local
+
+Redis:
+  Host: 127.0.0.1:6479
+  Type: node
+  Pass: ""
+
+Event:
+  Stream: shortlink:click:event
+  Group: traffic-service
+  Consumer: traffic-worker-1
+  BatchSize: 200
+  BlockMs: 2000
+

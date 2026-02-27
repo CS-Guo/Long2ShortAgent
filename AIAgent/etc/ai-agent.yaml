@@ -1,0 +1,25 @@
+Name: ai-agent
+Host: 0.0.0.0
+Port: 8890
+Timeout: 20000
+
+Mode: dev
+
+LLM:
+  BaseURL: https://www.dmxapi.cn/v1
+  APIKey: "sk-BdFxZ0abG1APGay9jk6QUf47xARiNQrqDhgTG6y2bAS2ruaz"
+  Model: Qwen3-8B
+  TimeoutMs: 8000
+
+InternalServices:
+  ShortenerCoreBaseURL: http://127.0.0.1:8888
+  TrafficServiceBaseURL: http://127.0.0.1:8891
+  ServiceToken: change-me
+  TimeoutMs: 3000
+
+Orchestration:
+  Engine: eino
+  MaxSteps: 6
+  EnableVerifier: true
+  AllowWriteActions: true
+  FallbackToRule: true

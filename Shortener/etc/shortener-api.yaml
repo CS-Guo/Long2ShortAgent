@@ -22,3 +22,9 @@ Redis:
   Host: 127.0.0.1:6479
   Type: node
   Pass: ""
+
+Internal:
+  ServiceToken: change-me
+
+Event:
+  ClickStream: shortlink:click:event

@@ -52,6 +52,7 @@ type (
 		Lurl     sql.NullString `db:"lurl"`
 		Md5      sql.NullString `db:"md5"` // MD5
 		Surl     sql.NullString `db:"surl"`
+		ExpireAt sql.NullTime   `db:"expire_at"`
 	}
 )
 
@@ -140,8 +141,8 @@ func (m *defaultShortUrlMapModel) Insert(ctx context.Context, data *ShortUrlMap)
 	shortlinkShortUrlMapMd5Key := fmt.Sprintf("%s%v", cacheShortlinkShortUrlMapMd5Prefix, data.Md5)
 	shortlinkShortUrlMapSurlKey := fmt.Sprintf("%s%v", cacheShortlinkShortUrlMapSurlPrefix, data.Surl)
 	ret, err := m.ExecCtx(ctx, func(ctx context.Context, conn sqlx.SqlConn) (result sql.Result, err error) {
-		query := fmt.Sprintf("insert into %s (%s) values (?, ?, ?, ?, ?)", m.table, shortUrlMapRowsExpectAutoSet)
-		return conn.ExecCtx(ctx, query, data.CreateBy, data.IsDel, data.Lurl, data.Md5, data.Surl)
+		query := fmt.Sprintf("insert into %s (%s) values (?, ?, ?, ?, ?, ?)", m.table, shortUrlMapRowsExpectAutoSet)
+		return conn.ExecCtx(ctx, query, data.CreateBy, data.IsDel, data.Lurl, data.Md5, data.Surl, data.ExpireAt)
 	}, shortlinkShortUrlMapIdKey, shortlinkShortUrlMapMd5Key, shortlinkShortUrlMapSurlKey)
 	return ret, err
 }
@@ -157,7 +158,7 @@ func (m *defaultShortUrlMapModel) Update(ctx context.Context, newData *ShortUrlM
 	shortlinkShortUrlMapSurlKey := fmt.Sprintf("%s%v", cacheShortlinkShortUrlMapSurlPrefix, data.Surl)
 	_, err = m.ExecCtx(ctx, func(ctx context.Context, conn sqlx.SqlConn) (result sql.Result, err error) {
 		query := fmt.Sprintf("update %s set %s where `id` = ?", m.table, shortUrlMapRowsWithPlaceHolder)
-		return conn.ExecCtx(ctx, query, newData.CreateBy, newData.IsDel, newData.Lurl, newData.Md5, newData.Surl, newData.Id)
+		return conn.ExecCtx(ctx, query, newData.CreateBy, newData.IsDel, newData.Lurl, newData.Md5, newData.Surl, newData.ExpireAt, newData.Id)
 	}, shortlinkShortUrlMapIdKey, shortlinkShortUrlMapMd5Key, shortlinkShortUrlMapSurlKey)
 	return err
 }

@@ -6,8 +6,10 @@ CREATE TABLE `short_url_map` (
                                  `lurl` varchar(2048) DEFAULT NULL COMMENT '⻓长链接',
                                  `md5` char(32) DEFAULT NULL COMMENT '⻓长链接MD5',
                                  `surl` varchar(11) DEFAULT NULL COMMENT '短链接',
+                                 `expire_at` DATETIME NULL COMMENT '过期时间，NULL 表示永不过期',
                                  PRIMARY KEY (`id`),
                                  INDEX(`is_del`),
                                  UNIQUE(`md5`),
-                                 UNIQUE(`surl`)
+                                 UNIQUE(`surl`),
+                                 KEY `idx_expire_at` (`expire_at`)
 )ENGINE=INNODB DEFAULT CHARSET=utf8mb4 COMMENT = '⻓长短链映射表';

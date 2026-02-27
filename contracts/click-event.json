@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ShortLinkClickEvent",
+  "type": "object",
+  "required": [
+    "eventId",
+    "traceId",
+    "occurredAt",
+    "shortCode",
+    "requestId"
+  ],
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "description": "唯一事件 ID（建议 UUID）"
+    },
+    "traceId": {
+      "type": "string",
+      "description": "链路追踪 ID"
+    },
+    "requestId": {
+      "type": "string",
+      "description": "HTTP 请求 ID"
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "shortCode": {
+      "type": "string"
+    },
+    "longUrl": {
+      "type": "string"
+    },
+    "ip": {
+      "type": "string"
+    },
+    "ua": {
+      "type": "string"
+    },
+    "referer": {
+      "type": "string"
+    },
+    "country": {
+      "type": "string"
+    },
+    "province": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "deviceType": {
+      "type": "string",
+      "enum": ["mobile", "desktop", "tablet", "bot", "unknown"]
+    }
+  }
+}
+

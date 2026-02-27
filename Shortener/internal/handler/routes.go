@@ -21,6 +21,16 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			},
 			{
 				Method:  http.MethodPost,
+				Path:    "/internal/shortlinks",
+				Handler: InternalCreateShortLinkHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPatch,
+				Path:    "/internal/shortlinks/:shortCode",
+				Handler: InternalUpdateShortLinkHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
 				Path:    "/convert",
 				Handler: ConvertHandler(serverCtx),
 			},

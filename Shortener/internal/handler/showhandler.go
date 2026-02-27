@@ -22,7 +22,7 @@ func ShowHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		}
 
 		l := logic.NewShowLogic(r.Context(), svcCtx)
-		resp, err := l.Show(&req)
+		resp, err := l.Show(&req, r)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		}

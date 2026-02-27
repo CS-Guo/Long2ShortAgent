@@ -9,6 +9,7 @@ import (
 	"goZero/sequence"
 
 	"github.com/zeromicro/go-zero/core/bloom"
+	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/stores/redis"
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
 )
@@ -19,11 +20,13 @@ type ServiceContext struct {
 	Sequence         sequence.Sequence // 序列生成器
 	ShotUrlBlackList map[string]bool
 	ShortDomain      string
+	RedisStore       *redis.Redis // Redis 客户端（用于 bloom、stream 等）
 
 	// 布隆过滤器
 	Filter *bloom.Filter
 }
 
+// NewServiceContext 初始化短链服务依赖。
 func NewServiceContext(c config.Config) *ServiceContext {
 	// 初始化数据库连接
 	conn := sqlx.NewMysql(c.ShortUrlDB.DSN)
@@ -55,8 +58,18 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		//Cache:            redis.MustNewRedis(redisConf), // 缓存层
 		ShotUrlBlackList: m,
 		ShortDomain:      c.ShortDomain,
+		RedisStore:       store,
 
 		Filter: bloom.New(store, "bloom", 62),
 	}
 
+}
+
+// IsInternalAuthorized 校验内部服务调用 token。
+func (s *ServiceContext) IsInternalAuthorized(token string) bool {
+	if s.Config.Internal.ServiceToken == "" {
+		logx.Error("internal service token is empty")
+		return false
+	}
+	return token == s.Config.Internal.ServiceToken
 }

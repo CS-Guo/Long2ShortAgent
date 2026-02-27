@@ -18,3 +18,33 @@ type ShowRequest struct {
 type ShowResponse struct {
 	LongUrl string `json:"longUrl"`
 }
+
+type InternalCreateShortLinkRequest struct {
+	RequestId  string `json:"requestId"`
+	OperatorId string `json:"operatorId"`
+	TenantId   string `json:"tenantId"`
+	LongUrl    string `json:"longUrl"`
+}
+
+type InternalCreateShortLinkResponse struct {
+	ShortUrl  string `json:"shortUrl"`
+	ShortCode string `json:"shortCode"`
+}
+
+type InternalUpdateShortLinkRequest struct {
+	ShortCode      string `path:"shortCode"`
+	RequestId      string `json:"requestId"`
+	IdempotencyKey string `json:"idempotencyKey"`
+	OperatorId     string `json:"operatorId"`
+	TenantId       string `json:"tenantId"`
+	LongUrl        string `json:"longUrl,optional"`
+	ExpireAt       string `json:"expireAt,optional"`
+	Status         string `json:"status,optional"`
+}
+
+type InternalUpdateShortLinkResponse struct {
+	Updated   bool   `json:"updated"`
+	ShortCode string `json:"shortCode"`
+	LongUrl   string `json:"longUrl,optional"`
+	ExpireAt  string `json:"expireAt,optional"`
+}

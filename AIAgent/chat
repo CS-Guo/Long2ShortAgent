@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# chat 是 AIAgent 的超短启动命令。
+# 用法：
+#   ./chat                # 仅大模型直聊
+#   ./chat --tools        # 开启工具编排模式
+#   ./chat --tools --session demo-cli-1
+#   ./chat --help
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$ROOT_DIR"
+
+enable_tools=false
+session_id=""
+operator_id="u1001"
+tenant_id="t1001"
+extra_args=()
+
+usage() {
+  cat <<'USAGE'
+AIAgent 超短命令
+
+Usage:
+  ./chat
+  ./chat --tools
+  ./chat --tools --session demo-cli-1
+  ./chat --tools --operator u1001 --tenant t1001
+  ./chat -- -cli-system "你是一个简洁中文助手"
+
+Options:
+  -t, --tools              开启工具编排模式
+  -s, --session <id>       指定会话 ID
+  -o, --operator <id>      指定 operatorId（默认 u1001）
+  -n, --tenant <id>        指定 tenantId（默认 t1001）
+  -h, --help               显示帮助
+
+Tip:
+  其他参数可通过 "--" 原样透传给 agent.go。
+USAGE
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -t|--tools)
+      enable_tools=true
+      shift
+      ;;
+    -s|--session)
+      if [[ $# -lt 2 ]]; then
+        echo "missing value for $1" >&2
+        exit 1
+      fi
+      session_id="$2"
+      shift 2
+      ;;
+    -o|--operator)
+      if [[ $# -lt 2 ]]; then
+        echo "missing value for $1" >&2
+        exit 1
+      fi
+      operator_id="$2"
+      shift 2
+      ;;
+    -n|--tenant)
+      if [[ $# -lt 2 ]]; then
+        echo "missing value for $1" >&2
+        exit 1
+      fi
+      tenant_id="$2"
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    --)
+      shift
+      extra_args+=("$@")
+      break
+      ;;
+    *)
+      extra_args+=("$1")
+      shift
+      ;;
+  esac
+done
+
+cmd=(go run agent.go -cli)
+if [[ "$enable_tools" == "true" ]]; then
+  cmd+=( -cli-tools -cli-operator "$operator_id" -cli-tenant "$tenant_id" )
+  if [[ -n "$session_id" ]]; then
+    cmd+=( -cli-session "$session_id" )
+  fi
+fi
+
+if [[ ${#extra_args[@]} -gt 0 ]]; then
+  cmd+=( "${extra_args[@]}" )
+fi
+
+exec "${cmd[@]}"
